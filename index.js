@@ -16,8 +16,7 @@ app.use("/", subscriberRoutes);
 // Start server
 app.listen(process.env.PORT, async () => {
   try {
-    await connect(); // ✅ CALL the connect function
-    console.log("✅ Connected to DB");
+    await connect();
   } catch (error) {
     console.error("❌ DB connection failed:", error);
   }

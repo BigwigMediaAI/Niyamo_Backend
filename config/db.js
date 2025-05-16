@@ -6,10 +6,7 @@ const connect = () => {
   const DB = process.env.DB;
 
   mongoose
-    .connect(`${MongoURL}/${DB}`, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
+    .connect(`${MongoURL}/${DB}`, {})
     .then(() => console.log("🚀 DataBase Connected"))
     .catch((reason) => {
       console.log(`💩 Unable to connect to DataBase \n${reason}`);
