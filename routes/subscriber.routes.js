@@ -20,6 +20,23 @@ router.post("/subscribe", async (req, res) => {
     const subscriber = new Subscriber({ email });
     await subscriber.save();
 
+    // Send confirmation email
+    await sendEmail({
+      to: email,
+      subject: "🎉 You are subscribed to our Newsletter!",
+      text: "Thank you for subscribing!",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+          <h2>✅ Subscription Confirmed</h2>
+          <p>Hi there,</p>
+          <p>Thank you for subscribing to our newsletter! We'll keep you updated with the latest news, offers, and insights.</p>
+          <hr style="margin: 20px 0;" />
+          <p style="font-size: 14px; color: #888;">If you didn’t subscribe, please ignore this email.</p>
+          <p>Best regards,<br>The Team</p>
+        </div>
+      `,
+    });
+
     res.status(201).json({ success: true, message: "Subscribed successfully" });
   } catch (error) {
     console.error(error);

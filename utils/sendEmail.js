@@ -1,23 +1,24 @@
 const nodemailer = require("nodemailer");
 
-const sendEmail = async ({ to, subject, text }) => {
+const sendEmail = async ({ to, subject, text, html }) => {
   try {
     const transporter = nodemailer.createTransport({
-      service: "gmail", // or use "smtp.mailtrap.io" for testing
+      service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
       tls: {
-        rejectUnauthorized: false, // ✅ Accept self-signed certs
+        rejectUnauthorized: false,
       },
     });
 
     const mailOptions = {
-      from: `"Newsletter" <${process.env.EMAIL_USER}>`,
-      to, // string or array of emails
+      from: `"Niyamo" <${process.env.EMAIL_USER}>`,
+      to,
       subject,
       text,
+      html, // ✅ allow HTML content
     };
 
     await transporter.sendMail(mailOptions);
