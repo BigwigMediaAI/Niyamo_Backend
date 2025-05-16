@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Subscriber = require("../models/subscriber.model");
+const sendEmail = require("../utils/sendEmail");
 
 // POST /subscribe
 router.post("/subscribe", async (req, res) => {
@@ -33,6 +34,37 @@ router.get("/subscribers", async (req, res) => {
     res.json(subscribers);
   } catch (error) {
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post("/send-newsletter", async (req, res) => {
+  const { subject, message } = req.body;
+
+  if (!subject || !message) {
+    return res.status(400).json({ error: "Subject and message required" });
+  }
+
+  try {
+    const subscribers = await Subscriber.find({}, "email");
+    const emailList = subscribers.map((sub) => sub.email);
+
+    if (emailList.length === 0) {
+      return res.status(404).json({ error: "No subscribers found" });
+    }
+
+    // Send to all
+    await sendEmail({
+      to: emailList,
+      subject,
+      text: message,
+    });
+
+    res
+      .status(200)
+      .json({ success: true, message: "Newsletter sent to all subscribers" });
+  } catch (error) {
+    console.error("Error sending newsletter:", error);
+    res.status(500).json({ error: "Failed to send newsletter" });
   }
 });
 
