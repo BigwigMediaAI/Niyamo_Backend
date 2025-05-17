@@ -85,4 +85,81 @@ router.post("/send-newsletter", async (req, res) => {
   }
 });
 
+// POST /send-newsletter-to-some
+router.post("/send-newsletter-to-some", async (req, res) => {
+  const { emails, subject, message } = req.body;
+
+  if (!Array.isArray(emails) || emails.length === 0 || !subject || !message) {
+    return res.status(400).json({
+      error: "Emails (array), subject, and message are required",
+    });
+  }
+
+  try {
+    const existingSubscribers = await Subscriber.find({
+      email: { $in: emails },
+    });
+    const existingEmails = existingSubscribers.map((sub) => sub.email);
+
+    if (existingEmails.length === 0) {
+      return res.status(404).json({ error: "No matching subscribers found" });
+    }
+
+    const notFound = emails.filter((email) => !existingEmails.includes(email));
+    if (notFound.length > 0) {
+      console.warn(`These emails were not found in DB: ${notFound.join(", ")}`);
+    }
+
+    const html = `
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4; padding: 30px 0;">
+        <tr>
+          <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; padding: 40px; font-family: Arial, sans-serif; border-radius: 8px;">
+              <tr>
+                <td align="center">
+                  <img src="https://cdn.pixabay.com/photo/2016/01/10/22/52/letters-1132703_1280.png" alt="Company Logo" width="120" style="margin-bottom: 20px;" />
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <h2 style="color: #333333;">🌟 ${subject}</h2>
+                  <p style="font-size: 16px; color: #555555; line-height: 1.6;">
+                    Hello,<br><br>
+                    ${message}
+                  </p>
+
+                  <img src="https://cdn.pixabay.com/photo/2016/04/24/15/13/newsletter-1349774_1280.jpg" alt="Banner" width="100%" style="margin: 20px 0; border-radius: 6px;" />
+
+                  <a href="https://niyamo.vercel.app/" style="display:inline-block; padding: 12px 24px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 4px; margin-top: 20px;">🎁 See the Offer</a>
+
+                  <hr style="margin: 30px 0;" />
+
+                  <p style="font-size: 14px; color: #999999;">If you’d prefer not to receive emails like this, you can <a href="#" style="color: #999;">unsubscribe</a> at any time.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `;
+
+    await sendEmail({
+      to: existingEmails,
+      subject,
+      text: message, // Fallback
+      html,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Newsletter sent to ${existingEmails.length} subscribers`,
+      sentTo: existingEmails,
+      notFound,
+    });
+  } catch (error) {
+    console.error("Error sending newsletter to some:", error);
+    res.status(500).json({ error: "Failed to send newsletter" });
+  }
+});
+
 module.exports = router;
