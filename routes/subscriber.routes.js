@@ -151,7 +151,13 @@ router.post("/send-newsletter", async (req, res) => {
 
     // If no scheduling => send now
     if (!scheduleAt || new Date(scheduleAt) <= new Date()) {
-      const html = generateHtml({ imageUrl, title, content, ctaText, ctaUrl });
+      const html = generateHtml({
+        imageUrl: imageUrl || null,
+        title,
+        content,
+        ctaText,
+        ctaUrl,
+      });
 
       await sendEmail({
         to: existingEmails,
