@@ -249,13 +249,11 @@ router.post("/send-emailer", upload.array("attachments"), async (req, res) => {
       !subject ||
       !title ||
       !content ||
-      !ctaText ||
-      !ctaUrl ||
       (sendToAll !== "true" && (!emails || emails.length === 0))
     ) {
       return res.status(400).json({
         error:
-          "Required: subject, title, content, ctaText, ctaUrl. Provide emails if sendToAll is false.",
+          "Required: subject, title, content. Provide emails if sendToAll is false.",
       });
     }
 
