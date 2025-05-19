@@ -87,15 +87,35 @@ router.get("/subscribers", async (req, res) => {
 // });
 
 function generateHtml({ imageUrl, title, content, ctaText, ctaUrl }) {
+  // Normalize all types of line breaks (including <div> or <br> or real newlines)
+  const normalized = content
+    .replace(/<div><br><\/div>/g, "\n\n") // optional: depends on your editor
+    .replace(/<div>/g, "\n")
+    .replace(/<\/div>/g, "")
+    .replace(/<br\s*\/?>/g, "\n")
+    .replace(/\r\n/g, "\n") // Windows line breaks
+    .replace(/\r/g, "\n");
+
+  const htmlContent = normalized
+    .split("\n\n") // paragraphs
+    .map(
+      (paragraph) =>
+        `<p style="margin: 0 0 1em; line-height: 1.6;">${paragraph
+          .split("\n") // single line breaks
+          .map((line) => line.trim())
+          .join("<br>")}</p>`
+    )
+    .join("");
+
   return `
-    <div style="font-family: sans-serif; padding: 20px;">
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
       ${
         imageUrl
           ? `<img src="${imageUrl}" alt="Newsletter Image" style="max-width: 100%; height: auto; margin-bottom: 20px;" />`
           : ""
       }
-      <h2 style="color: #333;">${title}</h2>
-      <pre style="white-space: pre-wrap; font-size: 16px; line-height: 1.6; color: #555;">${content}</pre>
+      <h2 style="margin-bottom: 1em;">${title}</h2>
+      ${htmlContent}
       <a href="${ctaUrl}" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">${ctaText}</a>
     </div>
   `;

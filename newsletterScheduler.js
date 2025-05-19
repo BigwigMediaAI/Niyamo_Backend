@@ -4,11 +4,17 @@ const sendEmail = require("./utils/sendEmail");
 
 // Helper to format plain text content to HTML paragraphs and <br> tags
 function formatContent(content) {
-  return content
-    .split("\n\n") // Split into paragraphs
+  // Normalize any accidental Windows/Mac line endings
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+  return normalized
+    .split("\n\n") // Paragraphs separated by two newlines
     .map(
       (para) =>
-        `<p style="margin-bottom: 1em;">${para.replace(/\n/g, "<br>")}</p>`
+        `<p style="margin-bottom: 1em; line-height: 1.6; color: #555555;">${para
+          .split("\n")
+          .map((line) => line.trim())
+          .join("<br>")}</p>`
     )
     .join("");
 }
@@ -27,49 +33,48 @@ cron.schedule("* * * * *", async () => {
       const formattedContent = formatContent(newsletter.content);
 
       const html = `
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4; padding: 30px 0;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; padding: 40px; font-family: Arial, sans-serif; border-radius: 8px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4; padding: 30px 0;">
           <tr>
             <td align="center">
-              ${
-                newsletter.imageUrl
-                  ? `<img src="${newsletter.imageUrl}" alt="Newsletter Image" width="100%" style="margin-bottom: 20px; border-radius: 6px;" />`
-                  : ""
-              }
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <h2 style="color: #333333;">${newsletter.title}</h2>
-              <pre style="white-space: pre-wrap; font-size: 16px; color: #555555; line-height: 1.6;">${
-                newsletter.content
-              }</pre>
+              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; padding: 40px; font-family: Arial, sans-serif; border-radius: 8px;">
+                <tr>
+                  <td align="center">
+                    ${
+                      newsletter.imageUrl
+                        ? `<img src="${newsletter.imageUrl}" alt="Newsletter Image" width="100%" style="margin-bottom: 20px; border-radius: 6px;" />`
+                        : ""
+                    }
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <h2 style="color: #333333;">${newsletter.title}</h2>
 
-              <a href="${
-                newsletter.ctaUrl
-              }" style="display:inline-block; padding: 12px 24px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 4px; margin-top: 20px;">
-                ${newsletter.ctaText}
-              </a>
+                    ${formattedContent}
 
-              <hr style="margin: 30px 0;" />
+                    <a href="${
+                      newsletter.ctaUrl
+                    }" style="display:inline-block; padding: 12px 24px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 4px; margin-top: 20px;">
+                      ${newsletter.ctaText}
+                    </a>
 
-              <p style="font-size: 14px; color: #999999;">
-                If you’d prefer not to receive emails like this, you can <a href="#" style="color: #999;">unsubscribe</a> at any time.
-              </p>
+                    <hr style="margin: 30px 0;" />
+
+                    <p style="font-size: 14px; color: #999999;">
+                      If you’d prefer not to receive emails like this, you can <a href="#" style="color: #999;">unsubscribe</a> at any time.
+                    </p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
         </table>
-      </td>
-    </tr>
-  </table>
-`;
+      `;
 
       await sendEmail({
         to: newsletter.emails,
         subject: newsletter.subject,
-        text: newsletter.content.replace(/<[^>]+>/g, ""),
+        text: newsletter.content.replace(/<[^>]+>/g, ""), // fallback plain text
         html,
       });
 
