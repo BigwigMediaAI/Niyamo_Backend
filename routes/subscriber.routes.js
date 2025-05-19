@@ -87,23 +87,15 @@ router.get("/subscribers", async (req, res) => {
 // });
 
 function generateHtml({ imageUrl, title, content, ctaText, ctaUrl }) {
-  const formattedContent = content
-    .split("\n\n") // Split into paragraphs
-    .map(
-      (para) =>
-        `<p style="margin-bottom: 1em;">${para.replace(/\n/g, "<br>")}</p>`
-    )
-    .join("");
-
   return `
     <div style="font-family: sans-serif; padding: 20px;">
       ${
         imageUrl
-          ? `<img src="${imageUrl}" alt="Newsletter Image" style="max-width: 100%; height: auto;" />`
+          ? `<img src="${imageUrl}" alt="Newsletter Image" style="max-width: 100%; height: auto; margin-bottom: 20px;" />`
           : ""
       }
-      <h2>${title}</h2>
-      <div>${formattedContent}</div>
+      <h2 style="color: #333;">${title}</h2>
+      <pre style="white-space: pre-wrap; font-size: 16px; line-height: 1.6; color: #555;">${content}</pre>
       <a href="${ctaUrl}" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">${ctaText}</a>
     </div>
   `;
