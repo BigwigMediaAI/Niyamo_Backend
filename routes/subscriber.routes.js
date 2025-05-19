@@ -3,6 +3,12 @@ const router = express.Router();
 const Subscriber = require("../models/subscriber.model");
 const sendEmail = require("../utils/sendEmail");
 const Newsletter = require("../models/newsletter");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+// Configure multer for file uploads
+const upload = multer({ dest: "uploads/" });
 
 // POST /subscribe
 router.post("/subscribe", async (req, res) => {
@@ -223,6 +229,76 @@ router.post("/send-newsletter", async (req, res) => {
   } catch (error) {
     console.error("❌ Error sending newsletter:", error.message);
     res.status(500).json({ error: "Failed to send newsletter" });
+  }
+});
+
+router.post("/send-emailer", upload.array("attachments"), async (req, res) => {
+  try {
+    const {
+      subject,
+      title,
+      content,
+      ctaText,
+      ctaUrl,
+      imageUrl,
+      emails,
+      sendToAll,
+    } = req.body;
+
+    if (
+      !subject ||
+      !title ||
+      !content ||
+      !ctaText ||
+      !ctaUrl ||
+      (sendToAll !== "true" && (!emails || emails.length === 0))
+    ) {
+      return res.status(400).json({
+        error:
+          "Required: subject, title, content, ctaText, ctaUrl. Provide emails if sendToAll is false.",
+      });
+    }
+
+    // Get target recipients
+    const targetEmails =
+      sendToAll === "true"
+        ? (await Subscriber.find({})).map((s) => s.email)
+        : Array.isArray(emails)
+        ? emails
+        : emails.split(",").map((e) => e.trim());
+
+    if (targetEmails.length === 0) {
+      return res.status(404).json({ error: "No recipients found" });
+    }
+
+    // Prepare attachments
+    const attachments = req.files?.map((file) => ({
+      filename: file.originalname,
+      path: file.path,
+    }));
+
+    // Generate HTML
+    const html = generateHtml({ imageUrl, title, content, ctaText, ctaUrl });
+
+    // Send the email
+    await sendEmail({
+      to: targetEmails,
+      subject,
+      text: content.replace(/<[^>]+>/g, ""),
+      html,
+      attachments,
+    });
+
+    // Clean up files
+    attachments?.forEach((file) => fs.unlink(file.path, () => {}));
+
+    res.status(200).json({
+      success: true,
+      message: `Email sent to ${targetEmails.length} recipients.`,
+    });
+  } catch (error) {
+    console.error("❌ Error sending emailer:", error);
+    res.status(500).json({ error: "Failed to send email" });
   }
 });
 
