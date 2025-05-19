@@ -2,6 +2,17 @@ const cron = require("node-cron");
 const Newsletter = require("./models/newsletter");
 const sendEmail = require("./utils/sendEmail");
 
+// Helper to format plain text content to HTML paragraphs and <br> tags
+function formatContent(content) {
+  return content
+    .split("\n\n") // Split into paragraphs
+    .map(
+      (para) =>
+        `<p style="margin-bottom: 1em;">${para.replace(/\n/g, "<br>")}</p>`
+    )
+    .join("");
+}
+
 // Run every minute
 cron.schedule("* * * * *", async () => {
   try {
@@ -13,6 +24,8 @@ cron.schedule("* * * * *", async () => {
     });
 
     for (const newsletter of newsletters) {
+      const formattedContent = formatContent(newsletter.content);
+
       const html = `
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4; padding: 30px 0;">
           <tr>
@@ -30,9 +43,9 @@ cron.schedule("* * * * *", async () => {
                 <tr>
                   <td>
                     <h2 style="color: #333333;">${newsletter.title}</h2>
-                    <p style="font-size: 16px; color: #555555; line-height: 1.6;">
-                      ${newsletter.content}
-                    </p>
+                    <div style="font-size: 16px; color: #555555; line-height: 1.6;">
+                      ${formattedContent}
+                    </div>
 
                     <a href="${
                       newsletter.ctaUrl
